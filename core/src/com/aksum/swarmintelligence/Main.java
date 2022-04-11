@@ -1,18 +1,13 @@
 package com.aksum.swarmintelligence;
 
 import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
-
-import java.io.Console;
-
-import jdk.internal.net.http.common.Log;
+import com.sun.tools.javac.util.ArrayUtils;
 
 public class Main extends ApplicationAdapter {
 	public static final int SCR_WIDTH = 1800, SCR_HEIGHT = 1000; // screen size
@@ -21,15 +16,23 @@ public class Main extends ApplicationAdapter {
 
 	// textures and sound
 	Texture imgBoid;
+	Texture imgBlueBoid;
+	Texture imgRedBoid;
+	Texture imgGreenBoid;
 	Texture imgQueen;
+	Texture imgStorageQueen;
 	Texture imgBlueResource;
 	Texture imgRedResource;
 	Texture imgGreenResource;
 
-	Array<Boid> boids = new Array<>();
+	Array<Boid> blueBoids = new Array<>();
+	Array<Boid> greenBoids = new Array<>();
+	Array<Boid> redBoids = new Array<>();
+	Array<Resource> blueResource = new Array<>();
+	Array<Resource> greenResource = new Array<>();
+	Array<Resource> redResource = new Array<>();
 	Array<Queen> queens = new Array<>();
 	Array<Scout> scouts = new Array<>();
-	Array<Resource> blueResource = new Array<>();
 
 	@Override
 	public void create () {
@@ -40,13 +43,23 @@ public class Main extends ApplicationAdapter {
 		// load resources and sounds
 		loadResources();
 
-		// create boids objects
+		// create blue boids objects
 		for(int i = 0;i < 1000;i++) {
-			boids.add(new Boid());
+			blueBoids.add(new Boid());
+		}
+
+		// create green boids objects
+		for(int i = 0;i < 1000;i++) {
+			greenBoids.add(new Boid());
+		}
+
+		// create red boids objects
+		for(int i = 0;i < 1000;i++) {
+			redBoids.add(new Boid());
 		}
 
 		// create queens objects
-		for(int i = 0;i < 3;i++) {
+		for(int i = 0;i < 1;i++) {
 			queens.add(new Queen());
 		}
 
@@ -56,8 +69,18 @@ public class Main extends ApplicationAdapter {
 		}
 
 		// create blue resource objects
-		for(int i = 0;i < 4;i++) {
+		for(int i = 0;i < 7;i++) {
 			blueResource.add(new Resource());
+		}
+
+		// create green resource objects
+		for(int i = 0;i < 7;i++) {
+			greenResource.add(new Resource());
+		}
+
+		// create red resource objects
+		for(int i = 0;i < 7;i++) {
+			redResource.add(new Resource());
 		}
 	}
 
@@ -67,13 +90,65 @@ public class Main extends ApplicationAdapter {
 		batch.begin();
 
 		// move boids
-		for(int i = 0;i < boids.size;i++){
-			boids.get(i).move();
+		for(int i = 0; i < blueBoids.size; i++){
+			blueBoids.get(i).move();
+			if(blueBoids.get(i).becomeQueen()){
+				Queen q = new Queen();
+				q.x = blueBoids.get(i).x;
+				q.y = blueBoids.get(i).y;
+				queens.add(q);
+				blueBoids.removeValue(blueBoids.get(i),true);
+			}
+		}
+
+		// move boids
+		for(int i = 0; i < greenBoids.size; i++){
+			greenBoids.get(i).move();
+			if(greenBoids.get(i).becomeQueen()){
+				Queen q = new Queen();
+				q.x = greenBoids.get(i).x;
+				q.y = greenBoids.get(i).y;
+				queens.add(q);
+				greenBoids.removeValue(greenBoids.get(i),true);
+			}
+		}
+
+		// move boids
+		for(int i = 0; i < redBoids.size; i++){
+			redBoids.get(i).move();
+			if(redBoids.get(i).becomeQueen()){
+				Queen q = new Queen();
+				q.x = redBoids.get(i).x;
+				q.y = redBoids.get(i).y;
+				queens.add(q);
+				redBoids.removeValue(redBoids.get(i),true);
+			}
 		}
 
 		// move queens
 		for(int i = 0;i < queens.size;i++){
 			queens.get(i).move();
+			if(queens.get(i).spendResource()){
+				int what = MathUtils.random(0,2);
+				Boid b = new Boid();
+				b.x = queens.get(i).x;
+				b.y = queens.get(i).y;
+				switch (what) {
+					case 0:
+						blueBoids.add(b);
+						break;
+					case 1:
+						greenBoids.add(b);
+						break;
+					case 2:
+						redBoids.add(b);
+						break;
+				}
+			}
+			if(!queens.get(i).isAlive){
+				Queen q = queens.get(i);
+				queens.removeValue(q,true);
+			}
 		}
 
 		// move scouts
@@ -83,108 +158,59 @@ public class Main extends ApplicationAdapter {
 
 		// move blue resources
 		for(int i = 0;i < blueResource.size;i++){
+			if(!blueResource.get(i).isAlive){
+				blueResource.set(i,new Resource());
+			}
 			blueResource.get(i).move();
 		}
 
+		// move green resources
+		for(int i = 0;i < greenResource.size;i++){
+			if(!greenResource.get(i).isAlive){
+				greenResource.set(i,new Resource());
+			}
+			greenResource.get(i).move();
+		}
+
+		// move red resources
+		for(int i = 0;i < redResource.size;i++){
+			if(!redResource.get(i).isAlive){
+				redResource.set(i,new Resource());
+			}
+			redResource.get(i).move();
+		}
+
 		// Проверяем достигли ли боиды цели
-		for(int i = 0;i < boids.size;i++){
-			for(int j = 0;j < queens.size;j++){
-				if(boids.get(i).overlaps(queens.get(j))){
-					Boid b = boids.get(i);
-					b.distanceA = 0;
-					if(b.isNeedA){
-						b.isNeedA = false;
-						b.isNeedB = true;
-						b.a = b.a + 180;
-					}
-					boids.set(i,b);
-					break;
-				}
-			}
-			for(int j = 0;j < blueResource.size;j++){
-				if(boids.get(i).overlaps(blueResource.get(j))){
-					Boid b = boids.get(i);
-					b.distanceB = 0;
-					if(b.isNeedB){
-						b.isNeedB = false;
-						b.isNeedA = true;
-						b.a = b.a + 180;
-					}
-					boids.set(i,b);
-					break;
-				}
-			}
-		}
-
-		// Проверяем достигли ли скауты кого-нибудь
-		for(int i = 0;i < scouts.size;i++){
-			for(int j = 0;j < queens.size;j++){
-				if(scouts.get(i).overlaps(queens.get(j))){
-					Scout b = scouts.get(i);
-					b.distanceA = 0;
-					scouts.set(i,b);
-					break;
-				}
-			}
-			for(int j = 0;j < blueResource.size;j++){
-				if(scouts.get(i).overlaps(blueResource.get(j))){
-					Scout b = scouts.get(i);
-					b.distanceB = 0;
-					scouts.set(i,b);
-					break;
-				}
-			}
-		}
-
-		// Передаем данные между скаутами
-		for(int i = 0;i < scouts.size;i++){
-			for(int j = 0;j < scouts.size;j++){
-				if(i == j) continue;
-				Scout b = scouts.get(i);
-				Scout a = scouts.get(j);
-				if(a.distanceA + a.radius < b.distanceA){
-					b.distanceA = a.distanceA + (int)a.radius;
-				}
-				if(a.distanceB + a.radius < b.distanceB){
-					b.distanceB = a.distanceB + (int)a.radius;
-				}
-				scouts.set(i,b);
-			}
-		}
-
-		// Боиды принимают данные от скаутов
-		for(int i = 0;i < scouts.size;i++){
-			for(int j = 0;j < boids.size;j++){
-				if(i == j) continue;
-				Scout a = scouts.get(i);
-				Boid b = boids.get(j);
-				boolean isUpdated = false;
-				if (a.distanceA + a.radius < b.distanceA) {
-					b.distanceA = a.distanceA + (int)a.radius;
-					isUpdated = true;
-				}
-				if (a.distanceB + a.radius < b.distanceB) {
-					b.distanceB = a.distanceB + (int)a.radius;
-					isUpdated = true;
-				}
-				if(isUpdated) {
-					boids.set(j, b);
-					updatePos(j);
-				}
-			}
-		}
+		checkAimOverlaps(blueBoids,blueResource,"blue");
+		checkAimOverlaps(greenBoids,greenResource,"green");
+		checkAimOverlaps(redBoids,redResource,"red");
 
 		// Передаем данные между боидами
-		for(int i = 0;i < boids.size;i++){
-			updatePos(i);
+		for(int i = 0; i < blueBoids.size; i++){
+			updatePos(i,blueBoids);
+		}
+		for(int i = 0; i < greenBoids.size; i++){
+			updatePos(i,greenBoids);
+		}
+		for(int i = 0; i < redBoids.size; i++){
+			updatePos(i,redBoids);
 		}
 
-		for(int i = 0;i < boids.size;i++){
-			batch.draw(imgBoid,boids.get(i).x - boids.get(i).innerWidth/2,boids.get(i).y - boids.get(i).innerHeight/2,boids.get(i).innerWidth,boids.get(i).innerHeight);
+		for(int i = 0; i < blueBoids.size; i++){
+			batch.draw(imgBlueBoid, blueBoids.get(i).x - blueBoids.get(i).innerWidth/2, blueBoids.get(i).y - blueBoids.get(i).innerHeight/2, blueBoids.get(i).innerWidth, blueBoids.get(i).innerHeight);
+		}
+
+		for(int i = 0; i < greenBoids.size; i++){
+			batch.draw(imgGreenBoid, greenBoids.get(i).x - greenBoids.get(i).innerWidth/2, greenBoids.get(i).y - greenBoids.get(i).innerHeight/2, greenBoids.get(i).innerWidth, greenBoids.get(i).innerHeight);
+		}
+
+		for(int i = 0; i < redBoids.size; i++){
+			batch.draw(imgRedBoid, redBoids.get(i).x - redBoids.get(i).innerWidth/2, redBoids.get(i).y - redBoids.get(i).innerHeight/2, redBoids.get(i).innerWidth, redBoids.get(i).innerHeight);
 		}
 
 		for(int i = 0;i < queens.size;i++){
 			batch.draw(imgQueen,queens.get(i).x - queens.get(i).width/2,queens.get(i).y - queens.get(i).height/2,queens.get(i).width,queens.get(i).height);
+			batch.draw(imgStorageQueen,queens.get(i).x - queens.get(i).storageWidth/2,queens.get(i).y - queens.get(i).storageHeight/2,queens.get(i).storageWidth,queens.get(i).storageHeight);
 		}
 
 		for(int i = 0;i < scouts.size;i++){
@@ -193,6 +219,14 @@ public class Main extends ApplicationAdapter {
 
 		for(int i = 0;i < blueResource.size;i++){
 			batch.draw(imgBlueResource,blueResource.get(i).x - blueResource.get(i).width/2,blueResource.get(i).y - blueResource.get(i).height/2,blueResource.get(i).width,blueResource.get(i).height);
+		}
+
+		for(int i = 0;i < greenResource.size;i++){
+			batch.draw(imgGreenResource,greenResource.get(i).x - greenResource.get(i).width/2,greenResource.get(i).y - greenResource.get(i).height/2,greenResource.get(i).width,greenResource.get(i).height);
+		}
+
+		for(int i = 0;i < redResource.size;i++){
+			batch.draw(imgRedResource,redResource.get(i).x - redResource.get(i).width/2,redResource.get(i).y - redResource.get(i).height/2,redResource.get(i).width,redResource.get(i).height);
 		}
 
 		batch.end();
@@ -207,14 +241,18 @@ public class Main extends ApplicationAdapter {
 	public void loadResources() {
 		// load textures
 		imgBoid = new Texture("boid.png");
+		imgBlueBoid = new Texture("blue_boid.png");
+		imgRedBoid = new Texture("red_boid.png");
+		imgGreenBoid = new Texture("green_boid.png");
 		imgQueen = new Texture("queen.png");
+		imgStorageQueen = new Texture("storage_queen.png");
 		imgBlueResource = new Texture("blue_resource.png");
 		imgRedResource = new Texture("red_resource.png");
 		imgGreenResource = new Texture("green_resource.png");
 	}
 
-	public void updatePos(int i){
-		for(int j = 0;j < boids.size;j++) {
+	public void updatePos(int i,Array<Boid> boids){
+		for(int j = 0; j < boids.size; j++) {
 			if (i == j) continue;
 			if (boids.get(i).overlapsZone(boids.get(j))) {
 				Boid a = boids.get(j);
@@ -254,7 +292,40 @@ public class Main extends ApplicationAdapter {
 				}
 				if(isUpdated){
 					boids.set(i, b);
-					updatePos(j);
+					updatePos(j,boids);
+				}
+			}
+		}
+	}
+
+	public void checkAimOverlaps(Array<Boid> boids,Array<Resource> resource,String type){
+		for(int i = 0;i < boids.size;i++){
+			for(int j = 0;j < queens.size;j++){
+				if(boids.get(i).overlaps(queens.get(j))){
+					Boid b = boids.get(i);
+					b.distanceA = 0;
+					if(b.isNeedA){
+						b.isNeedA = false;
+						b.isNeedB = true;
+						queens.get(j).getResource(type);
+						b.a = b.a + 180;
+					}
+					boids.set(i,b);
+					break;
+				}
+			}
+			for(int j = 0;j < resource.size;j++){
+				if(boids.get(i).overlaps(resource.get(j))){
+					Boid b = boids.get(i);
+					b.distanceB = 0;
+					if(b.isNeedB){
+						b.isNeedB = false;
+						b.isNeedA = true;
+						resource.get(j).giveResource();
+						b.a = b.a + 180;
+					}
+					boids.set(i,b);
+					break;
 				}
 			}
 		}

@@ -11,15 +11,15 @@ public class Boid extends Object{
     float innerRadius, innerWidth,innerHeight; // сам боид
 
     Boid() {
-        innerRadius = 4;
+        innerRadius = 3;
         innerWidth = 2*innerRadius;
         innerHeight = 2*innerRadius;
 
-        radius = 30;
+        radius = 50;
         width = 2*radius;
         height = 2*radius;
 
-        v = MathUtils.random(2,5);
+        v = MathUtils.random(2,3);
 
         distanceA = 0;
         distanceB = 0;
@@ -34,7 +34,7 @@ public class Boid extends Object{
     void move() {
         int shouldChange = MathUtils.random(0,100);
         if(shouldChange < 10){
-            a = MathUtils.random(a - 20,a + 20);
+            a = MathUtils.random(a - 10,a + 10);
         }
         vx = v*MathUtils.cosDeg(a);
         vy = v*MathUtils.sinDeg(a);
@@ -55,5 +55,13 @@ public class Boid extends Object{
         float len1 = (x-o.x)*(x-o.x) + (y-o.y)*(y-o.y);
         float len2 = (innerRadius + o.radius)*(innerRadius + o.radius);
         return (len2 >= len1 && (distanceA > o.radius && distanceB > o.radius));
+    }
+
+    boolean becomeQueen(){
+        int shouldComeQueen = MathUtils.random(0,1000000);
+        if(shouldComeQueen <= 1){
+            return true;
+        }
+        return false;
     }
 }
