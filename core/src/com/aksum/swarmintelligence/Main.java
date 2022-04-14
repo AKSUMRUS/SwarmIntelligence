@@ -9,10 +9,16 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.sun.tools.javac.util.ArrayUtils;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+
 public class Main extends ApplicationAdapter {
 	public static final int SCR_WIDTH = 1800, SCR_HEIGHT = 1000; // screen size
 	SpriteBatch batch;
 	OrthographicCamera camera; // камера для масштабирования под все разрешения экранов
+	Comparator<Boid> comparator;
 
 	// textures and sound
 	Texture imgBoid;
@@ -43,18 +49,25 @@ public class Main extends ApplicationAdapter {
 		// load resources and sounds
 		loadResources();
 
+		comparator = new Comparator<Boid>() {
+			@Override
+			public int compare(Boid o1, Boid o2) {
+				return (o1.x == o2.x ? ( (o1.y == o2.y) ? 0 : (o1.y < o2.y) ? -1 : 1) : ((o1.x < o2.x) ? -1 : 1));
+			}
+		};
+
 		// create blue boids objects
-		for(int i = 0;i < 1000;i++) {
+		for(int i = 0;i < 500;i++) {
 			blueBoids.add(new Boid());
 		}
 
 		// create green boids objects
-		for(int i = 0;i < 1000;i++) {
+		for(int i = 0;i < 500;i++) {
 			greenBoids.add(new Boid());
 		}
 
 		// create red boids objects
-		for(int i = 0;i < 1000;i++) {
+		for(int i = 0;i < 500;i++) {
 			redBoids.add(new Boid());
 		}
 
@@ -185,6 +198,11 @@ public class Main extends ApplicationAdapter {
 		checkAimOverlaps(greenBoids,greenResource,"green");
 		checkAimOverlaps(redBoids,redResource,"red");
 
+		// Сортируем кординаты боидов
+		blueBoids.sort(comparator);
+		greenBoids.sort(comparator);
+		redBoids.sort(comparator);
+
 		// Передаем данные между боидами
 		for(int i = 0; i < blueBoids.size; i++){
 			updatePos(i,blueBoids);
@@ -252,7 +270,8 @@ public class Main extends ApplicationAdapter {
 	}
 
 	public void updatePos(int i,Array<Boid> boids){
-		for(int j = 0; j < boids.size; j++) {
+		int j = lowerBound(boids,boids.get(i).x - boids.get(i).radius);
+		for(; j < boids.size; j++) {
 			if (i == j) continue;
 			if (boids.get(i).overlapsZone(boids.get(j))) {
 				Boid a = boids.get(j);
@@ -295,6 +314,9 @@ public class Main extends ApplicationAdapter {
 					updatePos(j,boids);
 				}
 			}
+			if(boids.get(j).x > boids.get(i).x + boids.get(i).radius){
+				break;
+			}
 		}
 	}
 
@@ -329,5 +351,19 @@ public class Main extends ApplicationAdapter {
 				}
 			}
 		}
+	}
+
+	public int lowerBound(Array<Boid> b,float x){
+		int l = -1,r = b.size-1;
+		while (l+1 < r){
+			int m = ((l+r)/2);
+			if(b.get(m).x < x){
+				l = m;
+			}
+			else{
+				r = m;
+			}
+		}
+		return r;
 	}
 }

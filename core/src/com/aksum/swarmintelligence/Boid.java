@@ -19,7 +19,7 @@ public class Boid extends Object{
         width = 2*radius;
         height = 2*radius;
 
-        v = MathUtils.random(2,3);
+        v = MathUtils.random(2,5);
 
         distanceA = 0;
         distanceB = 0;
@@ -38,7 +38,11 @@ public class Boid extends Object{
         }
         vx = v*MathUtils.cosDeg(a);
         vy = v*MathUtils.sinDeg(a);
-        super.move();
+
+        x += vx;
+        y += vy;
+        if(x <= 0 || x > Main.SCR_WIDTH - innerWidth/2) a = 180 - a;
+        if(y <= 0 || y > Main.SCR_HEIGHT - innerHeight/2) a = -a;
 
         distanceB += 1;
         distanceA += 1;
